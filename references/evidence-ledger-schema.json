@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fact-checker/evidence-ledger.schema.json",
+  "title": "Fact Checker Evidence Ledger",
+  "type": "object",
+  "required": ["document", "claims"],
+  "additionalProperties": false,
+  "properties": {
+    "document": { "$ref": "#/$defs/document" },
+    "claims": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/claim" } },
+    "overall": { "$ref": "#/$defs/overall" },
+    "method": { "$ref": "#/$defs/method" }
+  },
+  "$defs": {
+    "document": {
+      "type": "object",
+      "required": ["document_id", "title", "checked_at"],
+      "additionalProperties": false,
+      "properties": {
+        "document_id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "publisher": { "type": "string" },
+        "document_type": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "file": { "type": "string" },
+        "version": { "type": "string" },
+        "publication_date": { "type": "string" },
+        "checked_at": { "type": "string", "format": "date-time" },
+        "scope": { "type": "string" }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "required": ["claim_id", "location", "original_text", "atomic_claim", "claim_type", "claim_scope", "materiality", "risk_level", "evidence_coverage", "source_access_level", "reason", "verified_at"],
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": { "type": "string", "minLength": 1 },
+        "document_id": { "type": "string" },
+        "document_version": { "type": "string" },
+        "location": { "type": "string", "minLength": 1 },
+        "original_text": { "type": "string", "minLength": 1 },
+        "atomic_claim": { "type": "string", "minLength": 1 },
+        "claim_type": { "type": "string" },
+        "claim_scope": { "type": "string", "enum": ["fact_checkable", "mixed_factual_and_nonfactual", "not_fact_checkable"] },
+        "scope_reason": { "type": "string" },
+        "materiality": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+        "risk_level": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+        "time_context": { "type": "string" },
+        "cited_source": { "type": "string" },
+        "resolved_source": { "type": "string" },
+        "source_identifier": { "type": "string" },
+        "source_type": { "type": "string" },
+        "source_version": { "type": "string" },
+        "retrieved_at": { "type": "string" },
+        "source_access_level": { "type": "string", "enum": ["direct_full_access", "partial_access", "indirect_access", "inaccessible", "not_applicable"] },
+        "evidence_coverage": { "type": "string", "enum": ["full_text_or_full_record", "substantive_excerpt", "abstract_or_summary_only", "metadata_only", "snippet_only", "no_inspectable_evidence", "not_applicable"] },
+        "source_passage": { "type": "string" },
+        "supporting_evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "counterevidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "citation_support": { "type": "string" },
+        "source_quality": { "type": "string" },
+        "source_independence": { "type": "string" },
+        "status": { "type": "string", "enum": ["Strongly confirming", "Confirming", "Unable to confirm", "Inaccurate"] },
+        "unable_subtype": { "type": "string", "enum": ["no_adequate_evidence_found", "source_inaccessible", "claim_underspecified", "not_currently_falsifiable", "materially_conflicting_evidence", "evidence_too_indirect_or_narrow", "evidence_stale_or_incomplete"] },
+        "inaccuracy_type": { "type": "string", "enum": ["direct_contradiction", "wrong_identity_date_place", "wrong_number_unit_denominator", "misquote_or_misattribution", "citation_does_not_support_claim", "false_or_misleading_context", "causal_overreach", "scope_or_population_overreach", "cherry_picking_or_omitted_qualification", "stale_or_superseded_claim", "retracted_or_invalid_source", "calculation_or_transcription_error", "material_internal_inconsistency"] },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+        "reason": { "type": "string", "minLength": 1 },
+        "limitations": { "type": "array", "items": { "type": "string" } },
+        "repair_action": { "type": "string" },
+        "escalation_required": { "type": "boolean" },
+        "escalation_reason": { "type": "string" },
+        "author_or_claimant_response": { "type": "string" },
+        "verified_at": { "type": "string", "format": "date-time" },
+        "checker": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "claim_scope": { "enum": ["fact_checkable", "mixed_factual_and_nonfactual"] } } },
+          "then": { "required": ["status", "confidence"] }
+        },
+        {
+          "if": { "properties": { "claim_scope": { "const": "not_fact_checkable" } } },
+          "then": { "required": ["scope_reason"], "not": { "anyOf": [{ "required": ["status"] }, { "required": ["confidence"] }] } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "Unable to confirm" } } },
+          "then": { "required": ["unable_subtype"] }
+        },
+        {
+          "if": { "properties": { "status": { "const": "Inaccurate" } } },
+          "then": { "required": ["inaccuracy_type"] }
+        },
+        {
+          "if": { "properties": { "status": { "const": "Strongly confirming" } } },
+          "then": { "properties": { "evidence_coverage": { "enum": ["full_text_or_full_record", "substantive_excerpt"] }, "source_access_level": { "enum": ["direct_full_access", "partial_access"] } } }
+        }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["source", "location", "relationship"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string" },
+        "identifier": { "type": "string" },
+        "location": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "relationship": { "type": "string", "enum": ["supports", "contradicts", "qualifies", "contextualizes", "fails_to_support"] },
+        "accessed_at": { "type": "string" },
+        "independence_note": { "type": "string" }
+      }
+    },
+    "overall": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string", "enum": ["Strongly confirming", "Confirming", "Unable to confirm", "Inaccurate"] },
+        "mixed_findings": { "type": "boolean" },
+        "composition": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "scope_only_claims": { "type": "integer", "minimum": 0 },
+        "reason": { "type": "string" }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "checked_claims": { "type": "integer", "minimum": 0 },
+        "sampling_rule": { "type": "string" },
+        "sources_consulted": { "type": "integer", "minimum": 0 },
+        "live_web_used": { "type": "boolean" },
+        "access_limitations": { "type": "array", "items": { "type": "string" } },
+        "search_cutoff": { "type": "string" }
+      }
+    }
+  }
+}

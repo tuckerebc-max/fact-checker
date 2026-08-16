@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fact Checker"
+  short_description: "Audit claims and citations with evidence"
+  default_prompt: "Use $fact-checker to audit this publication claim by claim and return an evidence ledger with status, confidence, limitations, and source citations."
